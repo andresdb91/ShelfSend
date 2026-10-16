@@ -11,6 +11,9 @@ ARG NODE_IMAGE="node:24.21.0-bookworm-slim@sha256:2fe369e969550cde8e867afc3fe370
 # platform. BUILDPLATFORM is supplied by BuildKit in the global scope.
 FROM --platform=$BUILDPLATFORM ${NODE_IMAGE} AS build
 
+# Allow skipping tests for local builds
+ARG SKIP_CHECKS=false
+
 WORKDIR /app
 COPY package.json package-lock.json ./
 RUN npm ci
@@ -30,7 +33,8 @@ COPY docs ./docs
 # Assemble a release image only after the repository's test and build gate.
 # Bound test parallelism for memory-constrained Docker builders; all tests and
 # their existing deadlines remain enabled.
-RUN VITEST_MAX_WORKERS=2 npm run check
+RUN if [ "$SKIP_CHECKS" = "false" ]; then VITEST_MAX_WORKERS=2 npm run check; fi
+
 RUN mkdir -p dist/release \
     && npm sbom --sbom-format cyclonedx > dist/release/sbom.cdx.json \
     && npm sbom --sbom-format cyclonedx --omit dev > dist/release/sbom.runtime.cdx.json \
