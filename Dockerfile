@@ -33,7 +33,10 @@ COPY docs ./docs
 # Assemble a release image only after the repository's test and build gate.
 # Bound test parallelism for memory-constrained Docker builders; all tests and
 # their existing deadlines remain enabled.
-RUN if [ "$SKIP_CHECKS" = "false" ]; then VITEST_MAX_WORKERS=2 npm run check; fi
+RUN if [ "$SKIP_CHECKS" = "false" ]; then \
+    VITEST_MAX_WORKERS=2 npm run check; \
+    else npm run build; \
+    fi
 
 RUN mkdir -p dist/release \
     && npm sbom --sbom-format cyclonedx > dist/release/sbom.cdx.json \
